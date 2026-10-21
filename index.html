@@ -25,7 +25,6 @@
         padding: 24px 16px 64px;
         position: relative;
         overflow-x: hidden;
-        /* ФОН С ГОРОДОМ И ГРАДИЕНТОМ */
         background-image: 
             radial-gradient(circle at center, rgba(0,0,0,0) 10%, rgba(0,0,0,0.8) 60%, rgba(0,0,0,1) 100%),
             url('city.jpg');
@@ -257,7 +256,7 @@
         pointer-events: none;
     }
 
-    /* ===== СПИКЕРЫ (LIQUID GLASS + РАСКРЫТИЕ) ===== */
+    /* ===== СПИКЕРЫ ===== */
     .section-title {
         font-size: .75rem;
         font-weight: 700;
@@ -272,7 +271,7 @@
         grid-template-columns: repeat(4, 1fr);
         gap: 16px;
         margin-bottom: 20px;
-        align-items: start; /* Важно для раскрытия карточек */
+        align-items: start;
     }
     .speaker-card {
         position: relative;
@@ -283,7 +282,7 @@
         border-radius: 20px;
         padding: 18px;
         display: flex;
-        flex-direction: column; /* Меняем на колонку для раскрытия */
+        flex-direction: column;
         gap: 14px;
         min-height: 130px;
         transition: all .4s cubic-bezier(0.25, 0.8, 0.25, 1);
@@ -298,7 +297,6 @@
         transform: translateY(-2px);
     }
 
-    /* Верхняя часть карточки (фото и инфо) */
     .speaker-top {
         display: flex;
         gap: 14px;
@@ -343,7 +341,6 @@
         line-height: 1.3;
     }
 
-    /* Скрытая часть с историей */
     .speaker-bio {
         max-height: 0;
         opacity: 0;
@@ -366,14 +363,13 @@
         border: 1px solid rgba(255,255,255,0.1);
         border-radius: 8px;
         padding: 4px 8px;
-        margin-top: auto; /* Прижимает к низу, если есть свободное место */
+        margin-top: auto;
         white-space: nowrap;
         max-width: 100%;
         overflow: hidden;
         text-overflow: ellipsis;
     }
 
-    /* Стили для раскрытой карточки */
     .speaker-card.expanded {
         background: rgba(30, 30, 40, 0.85);
         border-color: rgba(255, 255, 255, 0.4);
@@ -382,7 +378,7 @@
         z-index: 20;
     }
     .speaker-card.expanded .speaker-bio {
-        max-height: 300px; /* Достаточно для текста */
+        max-height: 300px;
         opacity: 1;
         margin-top: 10px;
         padding-top: 10px;
@@ -562,10 +558,10 @@
     <!-- ПЛЕЕР (ВСТРОЕН ВК) -->
     <div class="player-container">
         <iframe id="streamFrame"
-                src="https://vkvideo.ru/video_ext.php?oid=-6246566&id=456246663&hd=4&autoplay=1"
+                src="https://vkvideo.ru/video_ext.php?oid=-6246566&id=456246663&hash=2dbc660c2c901717"
                 frameborder="0"
                 allowfullscreen="1"
-                allow="autoplay; encrypted-media; fullscreen; picture-in-picture; screen-wake-lock;"
+                allow="autoplay; encrypted-media; fullscreen; picture-in-picture"
                 title="Трансляция EXPORT ONLINE'26"></iframe>
         <div class="now-playing">
             <span class="live-dot"></span>
@@ -642,7 +638,7 @@
 const CHANNELS = {
     main: {
         name: 'Главная сцена',
-        url: 'https://vkvideo.ru/video_ext.php?oid=-6246566&id=456246663&hd=4&autoplay=1',
+        url: 'https://vkvideo.ru/video_ext.php?oid=-6246566&id=456246663&hash=2dbc660c2c901717',
         schedule: [
             { time: '11:00', title: 'ОТКРЫТИЕ' },
             { time: '12:30', title: 'REC TALKS' },
@@ -696,7 +692,7 @@ function selectChannel(key) {
 }
 
 /* ============================================================
-   БЕГУЩАЯ СТРОКА (БЕСШОВНАЯ)
+   БЕГУЩАЯ СТРОКА (ИСПРАВЛЕНА)
    ============================================================ */
 
 const LINE_LIMIT = 25;          
@@ -784,6 +780,33 @@ function buildTicker(schedule) {
 
     if (!schedule || schedule.length === 0) return;
 
+    // 1. Создаем ОДИН базовый набор элементов
+    const baseSet = document.createDocumentFragment();
+    schedule.forEach(s => {
+        baseSet.appendChild(createTickerItem(s));
+        baseSet.appendChild(createSeparator());
+    });
+
+    // Чтобы узнать ширину, добавим один набор в DOM
+    track.appendChild(baseSet);
+    const singleSetWidth = track.getBoundingClientRect().width;
+
+    // 2. Считаем, сколько раз нужно продублировать набор, чтобы он превышал ширину экрана в 2 раза (для плавности)
+    const viewportWidth = track.parentElement.clientWidth;
+    const copiesNeeded = Math.ceil((viewportWidth * 2) / singleSetWidth) + 1;
+
+    // 3. Добавляем нужное количество копий
+    for (let i = 0; i < copiesNeeded; i++) {
+        const clone = track.firstElementChild.cloneNode(true);
+        // Так как мы клонируем фрагмент, нужно клонировать всех детей
+        const children = Array.from(track.firstElementChild.parentNode.children).slice(0, schedule.length * 2);
+        children.forEach(child => {
+            // Мы уже добавили первый набор, поэтому клонируем его целиком
+        });
+    }
+
+    // Простой и надежный способ: очищаем и собираем заново нужное количество копий
+    track.innerHTML = '';
     const buildSet = () => {
         const frag = document.createDocumentFragment();
         schedule.forEach(s => {
@@ -793,26 +816,18 @@ function buildTicker(schedule) {
         return frag;
     };
 
-    // Дублируем набор ДВА раза для плавности (итого 3 копии)
-    // Это гарантирует, что при любой ширине экрана строка не оборвется
-    track.appendChild(buildSet());
-    track.appendChild(buildSet());
-    track.appendChild(buildSet());
+    for (let i = 0; i < copiesNeeded; i++) {
+        track.appendChild(buildSet());
+    }
+
+    // Ширина ОДНОГО набора (ровно столько, сколько нужно для сдвига)
+    tickerContentWidth = singleSetWidth;
 
     if (tickerAnimation) cancelAnimationFrame(tickerAnimation);
     tickerOffset = 0;
     lastFrameTime = null;
 
-    requestAnimationFrame(() => {
-        const children = track.children;
-        const third = children.length / 3; // Делим на 3, так как у нас 3 копии
-        let width = 0;
-        for (let i = 0; i < third; i++) {
-            width += children[i].getBoundingClientRect().width;
-        }
-        tickerContentWidth = width;
-        tickerAnimation = requestAnimationFrame(animateTicker);
-    });
+    tickerAnimation = requestAnimationFrame(animateTicker);
 }
 
 function animateTicker(timestamp) {
@@ -828,12 +843,13 @@ function animateTicker(timestamp) {
 
     tickerOffset += TICKER_SPEED * dt;
 
-    // Сдвигаем ровно на ширину ОДНОГО набора, чтобы зациклить
+    // Когда первый набор ушел за экран ровно на свою ширину — сбрасываем счетчик
     if (tickerOffset >= tickerContentWidth) {
         tickerOffset -= tickerContentWidth;
     }
 
     const viewport = track.parentElement.clientWidth;
+    // Стартуем справа за пределами экрана и едем влево
     const startX = viewport;
     track.style.transform = `translateX(${startX - tickerOffset}px)`;
 
@@ -903,7 +919,7 @@ const SPEAKERS = [
     }
 ];
 
-const VISIBLE_ROWS = 2; // Изначально показываем 2 ряда по 4 карточки
+const VISIBLE_ROWS = 2; 
 const CARDS_PER_ROW = 4;
 const VISIBLE_COUNT = VISIBLE_ROWS * CARDS_PER_ROW;
 let speakersExpanded = false;
@@ -920,7 +936,6 @@ function renderSpeakers() {
         const card = document.createElement('div');
         card.className = 'speaker-card' + (i >= VISIBLE_COUNT ? ' hidden' : '');
         
-        // Добавляем клик для раскрытия
         card.onclick = () => {
             card.classList.toggle('expanded');
         };
@@ -955,7 +970,6 @@ function renderSpeakers() {
         topPart.appendChild(photo);
         topPart.appendChild(info);
 
-        // Скрытая часть с историей
         const bio = document.createElement('div');
         bio.className = 'speaker-bio';
         bio.textContent = sp.bio;
