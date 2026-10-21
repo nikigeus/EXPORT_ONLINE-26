@@ -72,7 +72,6 @@
         border: 1px solid var(--border);
         margin-bottom: 24px;
         position: relative;
-        /* Важно для z-index 3D ноутбука */
         z-index: 5; 
     }
     .player-container iframe {
@@ -116,7 +115,6 @@
         font-weight: 700;
         letter-spacing: .5px;
         color: var(--text);
-        /* Стеклянный эффект */
         background: rgba(255, 255, 255, 0.05);
         backdrop-filter: blur(16px);
         -webkit-backdrop-filter: blur(16px);
@@ -259,7 +257,7 @@
         pointer-events: none;
     }
 
-    /* ===== СПИКЕРЫ (LIQUID GLASS) ===== */
+    /* ===== СПИКЕРЫ (LIQUID GLASS + РАСКРЫТИЕ) ===== */
     .section-title {
         font-size: .75rem;
         font-weight: 700;
@@ -274,10 +272,10 @@
         grid-template-columns: repeat(4, 1fr);
         gap: 16px;
         margin-bottom: 20px;
+        align-items: start; /* Важно для раскрытия карточек */
     }
     .speaker-card {
         position: relative;
-        /* Стеклянный эффект */
         background: rgba(255, 255, 255, 0.05);
         backdrop-filter: blur(16px);
         -webkit-backdrop-filter: blur(16px);
@@ -285,16 +283,27 @@
         border-radius: 20px;
         padding: 18px;
         display: flex;
+        flex-direction: column; /* Меняем на колонку для раскрытия */
         gap: 14px;
         min-height: 130px;
-        transition: all .3s ease;
+        transition: all .4s cubic-bezier(0.25, 0.8, 0.25, 1);
         box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+        cursor: pointer;
+        overflow: hidden;
     }
     .speaker-card:hover { 
         background: rgba(255, 255, 255, 0.1);
         border-color: rgba(255, 255, 255, 0.3);
-        transform: translateY(-4px);
         box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
+        transform: translateY(-2px);
+    }
+
+    /* Верхняя часть карточки (фото и инфо) */
+    .speaker-top {
+        display: flex;
+        gap: 14px;
+        align-items: flex-start;
+        width: 100%;
     }
 
     .speaker-photo {
@@ -332,8 +341,20 @@
         font-size: .75rem;
         color: var(--muted);
         line-height: 1.3;
-        margin-bottom: auto;
     }
+
+    /* Скрытая часть с историей */
+    .speaker-bio {
+        max-height: 0;
+        opacity: 0;
+        overflow: hidden;
+        transition: all .4s cubic-bezier(0.25, 0.8, 0.25, 1);
+        font-size: .8rem;
+        color: #b0b0c0;
+        line-height: 1.5;
+        border-top: 1px solid transparent;
+    }
+
     .speaker-logo {
         align-self: flex-end;
         font-size: .65rem;
@@ -345,11 +366,27 @@
         border: 1px solid rgba(255,255,255,0.1);
         border-radius: 8px;
         padding: 4px 8px;
-        margin-top: 8px;
+        margin-top: auto; /* Прижимает к низу, если есть свободное место */
         white-space: nowrap;
         max-width: 100%;
         overflow: hidden;
         text-overflow: ellipsis;
+    }
+
+    /* Стили для раскрытой карточки */
+    .speaker-card.expanded {
+        background: rgba(30, 30, 40, 0.85);
+        border-color: rgba(255, 255, 255, 0.4);
+        transform: translateY(0) scale(1.02);
+        box-shadow: 0 20px 50px rgba(0,0,0,0.6);
+        z-index: 20;
+    }
+    .speaker-card.expanded .speaker-bio {
+        max-height: 300px; /* Достаточно для текста */
+        opacity: 1;
+        margin-top: 10px;
+        padding-top: 10px;
+        border-top-color: rgba(255, 255, 255, 0.1);
     }
 
     .speaker-card.hidden { display: none; }
@@ -506,7 +543,6 @@
         .lottery { padding: 32px 20px; }
         .lottery-form { grid-template-columns: 1fr; }
         .header h1 { font-size: 1.6rem; }
-        .laptop { display: none; } /* Скрываем ноутбук на мобильных, чтобы не мешал */
     }
     @media (max-width: 520px) {
         .speakers-grid { grid-template-columns: 1fr; }
@@ -523,11 +559,14 @@
         <div class="sub">ПРЯМАЯ ТРАНСЛЯЦИЯ</div>
     </header>
 
-    <!-- ПЛЕЕР + НОУТБУК -->
+    <!-- ПЛЕЕР (ВСТРОЕН ВК) -->
     <div class="player-container">
-
         <iframe id="streamFrame"
-                src="https://vkvideo.ru/video_ext.php?oid=-6246566&id=456246663&hash=2dbc660c2c901717" width="640" height="360" frameborder="0" allowfullscreen="1" style="background-color: #000" allow="autoplay; encrypted-media; fullscreen; picture-in-picture"></iframe>
+                src="https://vkvideo.ru/video_ext.php?oid=-6246566&id=456246663&hash=2dbc660c2c901717"
+                frameborder="0"
+                allowfullscreen="1"
+                allow="autoplay; encrypted-media; fullscreen; picture-in-picture"
+                title="Трансляция EXPORT ONLINE'26"></iframe>
         <div class="now-playing">
             <span class="live-dot"></span>
             <span>Сейчас в эфире: <strong id="nowPlaying">Главная сцена</strong></span>
@@ -611,36 +650,6 @@ const CHANNELS = {
             { time: '15:30', title: 'Сессия Сколково про высокотех' },
             { time: '17:05', title: 'Выход на рынок СНГ' },
             { time: '17:55', title: 'Заключение' }
-           { time: '11:00', title: 'ОТКРЫТИЕ' },
-            { time: '12:30', title: 'REC TALKS' },
-            { time: '14:00', title: 'Китай, Индия, Вьетнам, ОАЭ: внутренняя кухня популярных маркетплейсов' },
-            { time: '15:30', title: 'Сессия Сколково про высокотех' },
-            { time: '17:05', title: 'Выход на рынок СНГ' },
-            { time: '17:55', title: 'Заключение' }
-           { time: '11:00', title: 'ОТКРЫТИЕ' },
-            { time: '12:30', title: 'REC TALKS' },
-            { time: '14:00', title: 'Китай, Индия, Вьетнам, ОАЭ: внутренняя кухня популярных маркетплейсов' },
-            { time: '15:30', title: 'Сессия Сколково про высокотех' },
-            { time: '17:05', title: 'Выход на рынок СНГ' },
-            { time: '17:55', title: 'Заключение' }
-           { time: '11:00', title: 'ОТКРЫТИЕ' },
-            { time: '12:30', title: 'REC TALKS' },
-            { time: '14:00', title: 'Китай, Индия, Вьетнам, ОАЭ: внутренняя кухня популярных маркетплейсов' },
-            { time: '15:30', title: 'Сессия Сколково про высокотех' },
-            { time: '17:05', title: 'Выход на рынок СНГ' },
-            { time: '17:55', title: 'Заключение' }
-           { time: '11:00', title: 'ОТКРЫТИЕ' },
-            { time: '12:30', title: 'REC TALKS' },
-            { time: '14:00', title: 'Китай, Индия, Вьетнам, ОАЭ: внутренняя кухня популярных маркетплейсов' },
-            { time: '15:30', title: 'Сессия Сколково про высокотех' },
-            { time: '17:05', title: 'Выход на рынок СНГ' },
-            { time: '17:55', title: 'Заключение' }
-           { time: '11:00', title: 'ОТКРЫТИЕ' },
-            { time: '12:30', title: 'REC TALKS' },
-            { time: '14:00', title: 'Китай, Индия, Вьетнам, ОАЭ: внутренняя кухня популярных маркетплейсов' },
-            { time: '15:30', title: 'Сессия Сколково про высокотех' },
-            { time: '17:05', title: 'Выход на рынок СНГ' },
-            { time: '17:55', title: 'Заключение' }
         ]
     },
     studio1: {
@@ -687,7 +696,7 @@ function selectChannel(key) {
 }
 
 /* ============================================================
-   БЕГУЩАЯ СТРОКА
+   БЕГУЩАЯ СТРОКА (БЕСШОВНАЯ)
    ============================================================ */
 
 const LINE_LIMIT = 25;          
@@ -784,6 +793,9 @@ function buildTicker(schedule) {
         return frag;
     };
 
+    // Дублируем набор ДВА раза для плавности (итого 3 копии)
+    // Это гарантирует, что при любой ширине экрана строка не оборвется
+    track.appendChild(buildSet());
     track.appendChild(buildSet());
     track.appendChild(buildSet());
 
@@ -793,9 +805,9 @@ function buildTicker(schedule) {
 
     requestAnimationFrame(() => {
         const children = track.children;
-        const half = children.length / 2;
+        const third = children.length / 3; // Делим на 3, так как у нас 3 копии
         let width = 0;
-        for (let i = 0; i < half; i++) {
+        for (let i = 0; i < third; i++) {
             width += children[i].getBoundingClientRect().width;
         }
         tickerContentWidth = width;
@@ -816,6 +828,7 @@ function animateTicker(timestamp) {
 
     tickerOffset += TICKER_SPEED * dt;
 
+    // Сдвигаем ровно на ширину ОДНОГО набора, чтобы зациклить
     if (tickerOffset >= tickerContentWidth) {
         tickerOffset -= tickerContentWidth;
     }
@@ -828,29 +841,69 @@ function animateTicker(timestamp) {
 }
 
 /* ============================================================
-   СПИКЕРЫ
+   СПИКЕРЫ (С РАСКРЫТИЕМ)
    ============================================================ */
 
 const SPEAKERS = [
-    { name: 'Анна Королёва',  role: 'Директор по экспорту',        company: 'GlobalTrade',  color: '#e63946' },
-    { name: 'Иван Петров',    role: 'Руководитель маркетплейсов',  company: 'MarketPro',    color: '#457b9d' },
-    { name: 'Мария Соколова', role: 'Основатель',                  company: 'EastBridge',   color: '#2a9d8f' },
-    { name: 'Дмитрий Волков', role: 'Аналитик рынков Азии',        company: 'AsiaData',     color: '#e9c46a' },
-    { name: 'Елена Смирнова', role: 'Директор по логистике',       company: 'LogiChain',    color: '#f4a261' },
-    { name: 'Артём Кузнецов', role: 'CEO',                         company: 'SkTech',       color: '#9b5de5' },
-    { name: 'Ольга Морозова', role: 'Партнёр',                     company: 'LegalPlus',    color: '#00bbf9' },
-    { name: 'Сергей Лебедев', role: 'Руководитель направления',    company: 'PayFlow',      color: '#f15bb5' },
-    { name: 'Наталья Орлова', role: 'Директор по развитию',        company: 'BrandWave',    color: '#00f5d4' },
-    { name: 'Павел Николаев', role: 'Основатель',                  company: 'InfluenceHub', color: '#fee440' },
-    { name: 'Ксения Зайцева', role: 'Главный редактор',            company: 'ExportMedia',  color: '#e63946' },
-    { name: 'Максим Гусев',   role: 'Технический директор',        company: 'AI Retail',    color: '#457b9d' },
-    { name: 'Татьяна Белова', role: 'Советник по ВЭД',             company: 'TradeAdvisor', color: '#2a9d8f' },
-    { name: 'Роман Фролов',   role: 'Руководитель продаж',         company: 'ChinaDirect',  color: '#e9c46a' },
-    { name: 'Алина Крылова',  role: 'Менеджер проектов',           company: 'SilkRoad',     color: '#f4a261' },
-    { name: 'Виктор Щербаков',role: 'Профессор',                   company: 'Skolkovo',     color: '#9b5de5' }
+    { 
+        name: 'Анна Королёва',  
+        role: 'Директор по экспорту',        
+        company: 'GlobalTrade',  
+        color: '#e63946',
+        bio: 'Более 10 лет опыта в международной торговле. Успешно вывела на рынки Азии и Ближнего Востока более 50 российских брендов. Эксперт в области маркетплейсов и трансграничной логистики.' 
+    },
+    { 
+        name: 'Иван Петров',    
+        role: 'Руководитель маркетплейсов',  
+        company: 'MarketPro',    
+        color: '#457b9d',
+        bio: 'Специализируется на оптимизации процессов продаж на Wildberries и Ozon. Автор курса по аналитике маркетплейсов. Помогает компаниям увеличивать прибыль в 2-3 раза за счет грамотного ценообразования.' 
+    },
+    { 
+        name: 'Мария Соколова', 
+        role: 'Основатель',                  
+        company: 'EastBridge',   
+        color: '#2a9d8f',
+        bio: 'Серийный предприниматель. Построила мост между российскими производителями и китайскими дистрибьюторами. Спикер международных конференций по e-commerce.' 
+    },
+    { 
+        name: 'Дмитрий Волков', 
+        role: 'Аналитик рынков Азии',        
+        company: 'AsiaData',     
+        color: '#e9c46a',
+        bio: 'Проводит глубокие исследования потребительского спроса в Индии и Вьетнаме. Консультирует крупные корпорации по вопросам адаптации продуктов под азиатский менталитет.' 
+    },
+    { 
+        name: 'Елена Смирнова', 
+        role: 'Директор по логистике',       
+        company: 'LogiChain',    
+        color: '#f4a261',
+        bio: 'Отвечает за бесперебойную доставку грузов в 40 стран мира. Внедрила систему предиктивной аналитики, которая сократила время ожидания на таможне на 30%.' 
+    },
+    { 
+        name: 'Артём Кузнецов', 
+        role: 'CEO',                         
+        company: 'SkTech',       
+        color: '#9b5de5',
+        bio: 'Разработчик SaaS-решений для автоматизации ВЭД. Ведет проекты по интеграции искусственного интеллекта в процессы таможенного оформления.' 
+    },
+    { 
+        name: 'Ольга Морозова', 
+        role: 'Партнёр',                     
+        company: 'LegalPlus',    
+        color: '#00bbf9',
+        bio: 'Эксперт по международному контрактному праву. Помогает бизнесу избегать юридических ловушек при выходе на зарубежные рынки и защищает интеллектуальную собственность.' 
+    },
+    { 
+        name: 'Сергей Лебедев', 
+        role: 'Руководитель направления',    
+        company: 'PayFlow',      
+        color: '#f15bb5',
+        bio: 'Специалист по трансграничным платежам и валютному контролю. Настроил финансовые потоки для сотен экспортно-ориентированных компаний.' 
+    }
 ];
 
-const VISIBLE_ROWS = 3;
+const VISIBLE_ROWS = 2; // Изначально показываем 2 ряда по 4 карточки
 const CARDS_PER_ROW = 4;
 const VISIBLE_COUNT = VISIBLE_ROWS * CARDS_PER_ROW;
 let speakersExpanded = false;
@@ -866,6 +919,14 @@ function renderSpeakers() {
     SPEAKERS.forEach((sp, i) => {
         const card = document.createElement('div');
         card.className = 'speaker-card' + (i >= VISIBLE_COUNT ? ' hidden' : '');
+        
+        // Добавляем клик для раскрытия
+        card.onclick = () => {
+            card.classList.toggle('expanded');
+        };
+
+        const topPart = document.createElement('div');
+        topPart.className = 'speaker-top';
 
         const photo = document.createElement('div');
         photo.className = 'speaker-photo';
@@ -891,8 +952,16 @@ function renderSpeakers() {
         info.appendChild(role);
         info.appendChild(logo);
 
-        card.appendChild(photo);
-        card.appendChild(info);
+        topPart.appendChild(photo);
+        topPart.appendChild(info);
+
+        // Скрытая часть с историей
+        const bio = document.createElement('div');
+        bio.className = 'speaker-bio';
+        bio.textContent = sp.bio;
+
+        card.appendChild(topPart);
+        card.appendChild(bio);
         grid.appendChild(card);
     });
 
